@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InnerEcho — Confess Anonymously</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="nav-logo">InnerEcho</span>
+    </div>
+
+    <!-- SEARCH (visible on feed page) -->
+    <div class="nav-search" id="navSearchWrap">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search confessions..." oninput="filterConfessions()">
+      <span class="search-icon">🔍</span>
+    </div>
+
+    <div class="nav-right">
+      <!-- NAV LINKS -->
+      <button class="nav-link active" id="navFeedBtn" onclick="showPage('feed')">Confessions</button>
+      <button class="nav-link" id="navConfessBtn" onclick="showPage('confess')">+ Confess</button>
+
+      <!-- AUTH -->
+      <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()">&#9728;&#65039; Light</button>
+      <a href="/auth/google" id="loginBtn" class="hide">
+        <button class="btn-purple btn-sm">🔑 Login with Google</button>
+      </a>
+      <div id="userArea" class="user-area hide">
+        <span id="userGreeting" class="user-greeting"></span>
+        <a href="/auth/logout">
+          <button class="btn-ghost btn-sm">Logout</button>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ════════════════════════════════════ -->
+  <!-- PAGE: FEED                          -->
+  <!-- ════════════════════════════════════ -->
+  <div id="page-feed" class="page active">
+    <div class="feed-container">
+      <div class="feed-header">
+        <h2 class="feed-title">🌀 Latest Confessions</h2>
+        <span id="confessionCount" class="confession-count"></span>
+      </div>
+      <div class="sort-controls">
+        <button class="sort-btn active" id="sort-newest" onclick="setSort('newest')">&#128336; Newest</button>
+        <button class="sort-btn" id="sort-oldest" onclick="setSort('oldest')">&#128197; Oldest</button>
+        <button class="sort-btn" id="sort-reacted" onclick="setSort('reacted')">&#128293; Most Reacted</button>
+      </div>
+      <div id="confessionList">
+        <div class="loading">Loading confessions...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════ -->
+  <!-- PAGE: CONFESS                       -->
+  <!-- ════════════════════════════════════ -->
+  <div id="page-confess" class="page">
+    <div class="confess-container">
+      <h1 class="confess-heading">Confess Anonymously 
+        <br><span class="confess-sub"></span></h1>
+
+      <!-- NOT LOGGED IN BANNER -->
+      <div id="loginBanner" class="login-banner hide">
+        <p>You need to be logged in to confess.</p>
+        <a href="/auth/google">
+          <button class="btn-purple">🔑 Login with Google</button>
+        </a>
+      </div>
+
+      <!-- FORM -->
+      <div id="confessForm">
+        <textarea id="confessionText" class="confess-textarea" placeholder="Your Confession..." oninput="updateCount()"></textarea>
+        <div class="char-count"><span id="charCount">0</span>/5000</div>
+
+        <label class="field-label">Secret Code <span class="hint">(min 4 chars — needed to edit/delete)</span></label>
+        <div class="password-wrapper">
+          <input type="password" id="secretCode" class="input-field" placeholder="Enter secret code">
+          <button class="toggle-eye" onclick="toggleVisibility('secretCode', this)" type="button">👁</button>
+        </div>
+
+        <button class="btn-confess" onclick="submitConfession()">Confess</button>
+        <div id="formMsg" class="form-msg" style="margin-top:12px;"></div>
+        <p class="confess-note">By submitting you consent to anonymous processing and moderated publication.</p>
+      </div>
+
+      <!-- QUOTE ROTATOR -->
+      <div class="confess-quote-box">
+        <span class="quote-mark">&ldquo;</span>
+        <p id="confessQuote" class="quote-text"></p>
+        <span class="quote-mark right">&rdquo;</span>
+      </div>
+
+      <!-- HOW IT WORKS -->
+      <div class="how-it-works">
+        <h3 class="how-title">How it works</h3>
+        <div class="how-cards">
+          <div class="how-card">
+            <div class="how-icon">&#128274;</div>
+            <h4>Anonymous</h4>
+            <p>No names, no faces. Your identity stays completely hidden from others.</p>
+          </div>
+          <div class="how-card">
+            <div class="how-icon">&#128273;</div>
+            <h4>Secret Code</h4>
+            <p>Set a personal secret code so only you can edit or delete your confession later.</p>
+          </div>
+          <div class="how-card">
+            <div class="how-icon">&#128149;</div>
+            <h4>Feel Heard</h4>
+            <p>Others read, react and connect with your words. You are never truly alone.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════ -->
+  <!-- MODAL (edit / delete)               -->
+  <!-- ════════════════════════════════════ -->
+  <div id="modal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <h3 id="modalTitle" class="modal-title"></h3>
+      <p id="modalSubtitle" class="modal-subtitle"></p>
+
+      <div id="modalNewTextWrap" class="field-group" style="display:none">
+        <label class="field-label">New Confession Text</label>
+        <textarea id="modalNewText" class="input-area" placeholder="Updated confession..."></textarea>
+      </div>
+
+      <div id="ownerBypassWrap" class="owner-bypass hide"></div>
+
+      <div id="modalCodeGroup" class="field-group">
+        <label class="field-label">Secret Code</label>
+        <div class="password-wrapper">
+          <input type="password" id="modalCode" class="input-field" placeholder="Enter your secret code">
+          <button class="toggle-eye" onclick="toggleVisibility('modalCode', this)" type="button">👁</button>
+        </div>
+      </div>
+
+      <div id="modalMsg" class="form-msg"></div>
+
+      <div class="modal-actions">
+        <button id="modalConfirmBtn" class="btn-orange">Confirm</button>
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confettiCanvas"></canvas>
+  <div id="toastArea"></div>
+
+  <footer class="footer">
+    <p>InnerEcho &copy; 2026 — Share freely, live boldly.</p>
+  </footer>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
